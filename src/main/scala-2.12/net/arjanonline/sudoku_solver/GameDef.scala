@@ -20,6 +20,8 @@ trait GameDef {
     assert(availableCoordinateValues contains row)
     assert(availableCoordinateValues contains column)
 
+    def this(position: Int) = this(position % blockSize + 1, position / blockSize + 1)
+
     def block: Block = {
       val r = (row - 1) / blocksPerRow
       val c = (column - 1) / blocksPerColumn
@@ -28,15 +30,15 @@ trait GameDef {
     }
   }
 
+  object Coordinate {
+    def apply(position: Int) = new Coordinate(position)
+  }
+
   case class Cell(coordinate: Coordinate)(val value: Int) {
     assert(availableCellValues contains value)
   }
 
   case class Board(cells: List[Cell]) {
-    def row(r: Row): List[Cell] = rows(r)
-    def column(c: Column): List[Cell] = columns(c)
-    def block(b: Block): List[Cell] = blocks(b)
-
     def isDefinedAt(coordinate: Coordinate): Boolean =
       cells exists (cell => cell.coordinate == coordinate)
 
@@ -47,13 +49,10 @@ trait GameDef {
         Board(cell::cells)
     }
 
-    def isValid: Boolean = cells match {
-      case c::_ =>
-        val coordinate = c.coordinate
-        isValidList(row(coordinate.row)) &&
-          isValidList(column(coordinate.column)) &&
-          isValidList(block(coordinate.block))
-      case _ => true
+    def isValid: Boolean = {
+      rows.forall({case (_, cs: List[Cell]) => isValidList(cs)}) &&
+        columns.forall({case (_, cs: List[Cell]) => isValidList(cs)}) &&
+        blocks.forall({case (_, cs: List[Cell]) => isValidList(cs)})
     }
 
     def isValidList(cells: List[Cell]): Boolean =
@@ -65,6 +64,18 @@ trait GameDef {
       cells groupBy (cell => cell.coordinate.column)
     lazy val blocks: Map[Int, List[Cell]] =
       cells groupBy (cell => cell.coordinate.block)
+
+    override lazy val toString: String = {
+      def rowToString(cells: List[Cell]): String = {
+        cells.sortBy(_.coordinate.column).map(_.value).mkString(" ")
+      }
+
+      val rs = for {
+        r <- availableCoordinateValues
+      } yield rows.withDefaultValue(List())(r)
+
+      rs.map(rowToString).mkString("\n")
+    }
   }
 
   val board: Board

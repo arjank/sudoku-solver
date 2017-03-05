@@ -14,11 +14,11 @@ class StringBoardParserSuite extends FunSuite {
 
     override val boardString: String =
       """1 2 3 4 5 6
-        |2 3 4 5 6 1
-        |3 4 5 6 1 2
-        |4 5 6 1 2 3
-        |5 6 1 2 3 4
-        |6 1 2 3 4 5""".stripMargin
+        |2 2 3 4 5 6
+        |3 2 3 4 5 6
+        |4 2 3 4 5 6
+        |5 2 3 4 5 6
+        |6 2 3 4 5 6""".stripMargin
   }
 
   test("Same row + column is same cell") {
@@ -49,9 +49,15 @@ class StringBoardParserSuite extends FunSuite {
     }
   }
 
-  test("foo") {
+  test("all cells should be included") {
     new Board66 {
       assert(board.cells.size === 36)
+    }
+  }
+
+  test("toString should list items correctly") {
+    new Board66 {
+      assert(board.toString === boardString)
     }
   }
 }

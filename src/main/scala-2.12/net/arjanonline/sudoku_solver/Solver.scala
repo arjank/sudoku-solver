@@ -18,11 +18,13 @@ trait Solver extends GameDef {
   def possibleMoves(board: Board, coordinate: Coordinate): Seq[Board] = {
     if (board.isDefinedAt(coordinate)) Seq(board)
     else {
-      val boards = for (
-        v <- availableCellValues
-      ) yield board.add(Cell(coordinate)(v))
+      val allowedValues = allowedCellValues(board)
 
-      boards filter (b => isValid(b))
+      if (allowedValues.exists {case (_, l) => l.isEmpty }) Seq()
+      else
+        for {
+          v <- allowedValues(coordinate)
+        } yield board.add(Cell(coordinate)(v))
     }
   }
 
@@ -37,6 +39,21 @@ trait Solver extends GameDef {
 
       initial #::: from(n)
     }
+  }
+
+  def allowedCellValues(board: Board): Map[Coordinate, List[Int]] = {
+    def valueFilter(c: Coordinate)(v: Int): Boolean = {
+      (board.rows.withDefaultValue(List())(c.row).map(_.value) contains v) ||
+        (board.columns.withDefaultValue(List())(c.column).map(_.value) contains v) ||
+        (board.blocks.withDefaultValue(List())(c.block).map(_.value) contains v)
+    }
+
+    val coords = for {
+      c <- 0 until totalCells
+      if ! board.isDefinedAt(Coordinate(c))
+    } yield Coordinate(c)
+
+    coords.map(c => (c, availableCellValues.toList.filterNot(valueFilter(c)))).toMap
   }
 
   lazy val completeSolutions: Stream[Board] = {

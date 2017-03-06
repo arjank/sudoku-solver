@@ -66,4 +66,10 @@ class SolverSuite extends FunSuite {
       assert(solution.get.toString === solution9x9)
     }
   }
+
+  test("Solver should correctly identify allowed values") {
+    new Board9x9 {
+      assert(allowedCellValues(board)(Coordinate(0)) === List(2, 4, 6))
+    }
+  }
 }

@@ -47,15 +47,13 @@ class SolverSuite extends FunSuite {
       |8 9 3 5 2 1 4 6 7
       |5 4 1 8 7 6 3 9 2""".stripMargin
 
-  println(solution6x6)
-
   test("Solver should find correct solution for 6x6 sudoku") {
     new Board6x6 {
       assert(solution.get.toString === solution6x6)
     }
   }
 
-  test("Solver should find only one solution") {
+  test("Solver should find only one solution for the 6x6 sudoku") {
     new Board6x6 {
       assert(completeSolutions.length === 1)
     }
@@ -67,9 +65,15 @@ class SolverSuite extends FunSuite {
     }
   }
 
+  test("Solver should find only one solution for the 9x9 sudoku") {
+    new Board9x9 {
+      assert(completeSolutions.length === 1)
+    }
+  }
+
   test("Solver should correctly identify allowed values") {
     new Board9x9 {
-      assert(allowedCellValues(board)(Coordinate(0)) === List(2, 4, 6))
+      assert(allowedCellValues(board).filter{ case (c, l) => c == Coordinate(0) }.head._2 === List(2, 4, 6))
     }
   }
 }

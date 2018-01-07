@@ -59,20 +59,30 @@ trait GameDef {
       cells.map(cell => cell.value).toSet.size == cells.length
 
     lazy val rows: Map[Row, List[Cell]] =
-      cells groupBy (cell => cell.coordinate.row)
+      cells groupBy (cell => cell.coordinate.row) withDefaultValue List()
     lazy val columns: Map[Column, List[Cell]] =
-      cells groupBy (cell => cell.coordinate.column)
+      cells groupBy (cell => cell.coordinate.column) withDefaultValue List()
     lazy val blocks: Map[Int, List[Cell]] =
-      cells groupBy (cell => cell.coordinate.block)
+      cells groupBy (cell => cell.coordinate.block) withDefaultValue List()
 
     override lazy val toString: String = {
       def rowToString(cells: List[Cell]): String = {
-        cells.sortBy(_.coordinate.column).map(_.value).mkString(" ")
+        val empties =
+          availableCoordinateValues
+            .diff(cells.map(_.coordinate.column))
+            .map((_, "."))
+
+        cells
+          .map(c => (c.coordinate.column, c.value))
+          .++(empties)
+          .sortBy(_._1)
+          .map(_._2)
+          .mkString(" ")
       }
 
       val rs = for {
         r <- availableCoordinateValues
-      } yield rows.withDefaultValue(List())(r)
+      } yield rows(r)
 
       rs.map(rowToString).mkString("\n")
     }

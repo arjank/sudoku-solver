@@ -24,9 +24,32 @@ trait Solver extends GameDef {
 
   def allowedCellValues(board: Board): Seq[(Coordinate, Seq[Int])] = {
     def valueFilter(c: Coordinate)(v: Int): Boolean = {
-      (board.rows.withDefaultValue(List())(c.row).map(_.value) contains v) ||
-        (board.columns.withDefaultValue(List())(c.column).map(_.value) contains v) ||
-        (board.blocks.withDefaultValue(List())(c.block).map(_.value) contains v)
+      (board.rows(c.row).map(_.value) contains v) ||
+        (board.columns(c.column).map(_.value) contains v) ||
+        (board.blocks(c.block).map(_.value) contains v)
+    }
+
+    def findHiddenSinglesArea(cellValues: Iterable[(Coordinate, Seq[Int])]): Iterable[(Coordinate, Seq[Int])] = {
+      val uniqueNumbers = cellValues
+        .flatMap(_._2)
+        .groupBy(x => x)
+        .mapValues(_.size)
+        .filter(_._2 == 1)
+        .keys
+        .toList
+
+      cellValues.map({
+        case (n, s) if s.intersect(uniqueNumbers).nonEmpty => (n, s.intersect(uniqueNumbers))
+        case (n, s) => (n, s)
+      })
+    }
+
+    def findHiddenSingles(cellValues: Seq[(Coordinate, Seq[Int])]): Seq[(Coordinate, Seq[Int])] = {
+      val columns = cellValues.groupBy(_._1.column).mapValues(findHiddenSinglesArea).values.flatten
+      val rows = columns.groupBy(_._1.row).mapValues(findHiddenSinglesArea).values.flatten
+      val blocks = rows.groupBy(_._1.block).mapValues(findHiddenSinglesArea).values.flatten
+
+      blocks.toSeq
     }
 
     val coords = for {
@@ -34,7 +57,15 @@ trait Solver extends GameDef {
       if ! board.isDefinedAt(Coordinate(c))
     } yield Coordinate(c)
 
-    coords.map(c => (c, availableCellValues.filterNot(valueFilter(c)))).sortBy(_._2.length)
+    val coordValues =
+      coords
+        .map(c => (c, availableCellValues.filterNot(valueFilter(c))))
+        .sortBy(_._2.length)
+
+    coordValues.headOption.map(_._2.length) match {
+      case Some(n) if n <= 1 => coordValues
+      case _ => findHiddenSingles(coordValues).sortBy(_._2.length)
+    }
   }
 
   lazy val completeSolutions: Stream[Board] = {

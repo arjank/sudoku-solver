@@ -49,6 +49,13 @@ trait GameDef {
         Board(cell::cells)
     }
 
+    def add(extraCells: Iterable[Cell]): Board = {
+      if (extraCells.exists(c => isDefinedAt(c.coordinate)))
+        throw new IllegalStateException("Cannot redefine cell")
+      else
+        Board(cells ++ extraCells)
+    }
+
     def isValid: Boolean = {
       rows.forall({case (_, cs: List[Cell]) => isValidList(cs)}) &&
         columns.forall({case (_, cs: List[Cell]) => isValidList(cs)}) &&

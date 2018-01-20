@@ -5,18 +5,29 @@ trait Solver extends GameDef {
   lazy val totalCells: Int = blockSize * blockSize
 
   def done(b: Board): Boolean =
-    b.cells.length == totalCells
+    b.cells.lengthCompare(totalCells) == 0
 
   def from(initial: Stream[Board]): Stream[Board] = {
+    def prepareBoard(board: Board, cells: Seq[(Coordinate, Seq[Int])]): (Board, Coordinate, Seq[Int]) = {
+      val ones = cells.takeWhile(_._2.lengthCompare(1) == 0)
+      if (ones.lengthCompare(1) == 1) {
+        val newCells = ones.tail.map(data => Cell(data._1)(data._2.head))
+        val newBoard = board.add(newCells)
+        (newBoard, ones.head._1, ones.head._2)
+      } else {
+        (board, cells.head._1, cells.head._2)
+      }
+    }
+
     if (initial.isEmpty) Stream.Empty
     else {
       val boards = for {
         board <- initial
         cellValues = allowedCellValues(board)
         if cellValues.nonEmpty
-        (coordinate, values) = cellValues.head
+        (newBoard, coordinate, values) = prepareBoard(board, cellValues)
         value <- values
-      } yield board.add(Cell(coordinate)(value))
+      } yield newBoard.add(Cell(coordinate)(value))
 
       initial #::: from(boards)
     }
@@ -69,10 +80,10 @@ trait Solver extends GameDef {
   }
 
   lazy val completeSolutions: Stream[Board] = {
-    from(Stream(board)) filter (b => done(b))
+    from(Stream(board)) filter (b => done(b) && b.isValid)
   }
 
-  lazy val isAmbiguous: Boolean = completeSolutions.take(2).length > 1
+  lazy val isAmbiguous: Boolean = completeSolutions.take(2).lengthCompare(1) > 0
 
   lazy val solution: Option[Board] =
     completeSolutions.headOption
